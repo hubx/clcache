@@ -349,10 +349,11 @@ class Cache(object):
 
     def removeObjects(self, stats, removedObjects):
         for o in removedObjects:
-            dirPath = self.cacheSection(o).cacheEntryDir(o)
+            section = self.cacheSection(o)
+            dirPath = section.cacheEntryDir(o)
             if not os.path.exists(dirPath):
                 continue  # May be if object already evicted.
-            objectPath = os.path.join(dirPath, "object")
+            objectPath = section.cachedObjectName(o)
             if os.path.exists(objectPath):
                 # May be absent if this if cached compiler
                 # output (for preprocess-only).
