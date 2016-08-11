@@ -175,14 +175,16 @@ class TestManifestRepository(unittest.TestCase):
 
         return size
 
-    def testPaths(self):
-        manifestsRootDir = os.path.join(ASSETS_DIR, "manifests")
-        mm = ManifestRepository(manifestsRootDir)
-        ms = mm.section("fdde59862785f9f0ad6e661b9b5746b7")
+    def setUp(self):
+        self.manifestsRootDir = os.path.join(ASSETS_DIR, "manifests")
+        self.mm = ManifestRepository(self.manifestsRootDir)
 
-        self.assertEqual(ms.manifestSectionDir, os.path.join(manifestsRootDir, "fd"))
+    def testPaths(self):
+        ms = self.mm.section("fdde59862785f9f0ad6e661b9b5746b7")
+
+        self.assertEqual(ms.manifestSectionDir, os.path.join(self.manifestsRootDir, "fd"))
         self.assertEqual(ms.manifestPath("fdde59862785f9f0ad6e661b9b5746b7"),
-                         os.path.join(manifestsRootDir, "fd", "fdde59862785f9f0ad6e661b9b5746b7.json"))
+                         os.path.join(self.manifestsRootDir, "fd", "fdde59862785f9f0ad6e661b9b5746b7.json"))
 
     def testIncludesContentHash(self):
         self.assertEqual(
@@ -223,9 +225,6 @@ class TestManifestRepository(unittest.TestCase):
         )
 
     def testStoreAndGetManifest(self):
-        manifestsRootDir = os.path.join(ASSETS_DIR, "manifests")
-        mm = ManifestRepository(manifestsRootDir)
-
         manifest1 = Manifest([r'somepath\myinclude.h'], {
             "fdde59862785f9f0ad6e661b9b5746b7": "a649723940dc975ebd17167d29a532f8"
         })
@@ -233,8 +232,8 @@ class TestManifestRepository(unittest.TestCase):
             "474e7fc26a592d84dfa7416c10f036c6": "8771d7ebcf6c8bd57a3d6485f63e3a89"
         })
 
-        ms1 = mm.section("8a33738d88be7edbacef48e262bbb5bc")
-        ms2 = mm.section("0623305942d216c165970948424ae7d1")
+        ms1 = self.mm.section("8a33738d88be7edbacef48e262bbb5bc")
+        ms2 = self.mm.section("0623305942d216c165970948424ae7d1")
 
         ms1.setManifest("8a33738d88be7edbacef48e262bbb5bc", manifest1)
         ms2.setManifest("0623305942d216c165970948424ae7d1", manifest2)
@@ -250,16 +249,10 @@ class TestManifestRepository(unittest.TestCase):
                          "8771d7ebcf6c8bd57a3d6485f63e3a89")
 
     def testNonExistingManifest(self):
-        manifestsRootDir = os.path.join(ASSETS_DIR, "manifests")
-        mm = ManifestRepository(manifestsRootDir)
-
-        retrieved = mm.section("ffffffffffffffffffffffffffffffff").getManifest("ffffffffffffffffffffffffffffffff")
+        retrieved = self.mm.section("ffffffffffffffffffffffffffffffff").getManifest("ffffffffffffffffffffffffffffffff")
         self.assertIsNone(retrieved)
 
     def testClean(self):
-        manifestsRootDir = os.path.join(ASSETS_DIR, "manifests")
-        mm = ManifestRepository(manifestsRootDir)
-
         # Size in (120, 240] bytes
         manifest1 = Manifest([r'somepath\myinclude.h'], {
             "fdde59862785f9f0ad6e661b9b5746b7": "a649723940dc975ebd17167d29a532f8"
@@ -268,25 +261,25 @@ class TestManifestRepository(unittest.TestCase):
         manifest2 = Manifest([r'somepath\myinclude.h', 'moreincludes.h'], {
             "474e7fc26a592d84dfa7416c10f036c6": "8771d7ebcf6c8bd57a3d6485f63e3a89"
         })
-        mm.section("8a33738d88be7edbacef48e262bbb5bc").setManifest("8a33738d88be7edbacef48e262bbb5bc", manifest1)
-        mm.section("0623305942d216c165970948424ae7d1").setManifest("0623305942d216c165970948424ae7d1", manifest2)
+        self.mm.section("8a33738d88be7edbacef48e262bbb5bc").setManifest("8a33738d88be7edbacef48e262bbb5bc", manifest1)
+        self.mm.section("0623305942d216c165970948424ae7d1").setManifest("0623305942d216c165970948424ae7d1", manifest2)
 
-        cleaningResultSize = mm.clean(240)
+        cleaningResultSize = self.mm.clean(240)
         # Only one of those manifests can be left
         self.assertLessEqual(cleaningResultSize, 240)
-        self.assertLessEqual(self._getDirectorySize(manifestsRootDir), 240)
+        self.assertLessEqual(self._getDirectorySize(self.manifestsRootDir), 240)
 
-        cleaningResultSize = mm.clean(240)
+        cleaningResultSize = self.mm.clean(240)
         # The one remaining is remains alive
         self.assertLessEqual(cleaningResultSize, 240)
         self.assertGreaterEqual(cleaningResultSize, 120)
-        self.assertLessEqual(self._getDirectorySize(manifestsRootDir), 240)
-        self.assertGreaterEqual(self._getDirectorySize(manifestsRootDir), 120)
+        self.assertLessEqual(self._getDirectorySize(self.manifestsRootDir), 240)
+        self.assertGreaterEqual(self._getDirectorySize(self.manifestsRootDir), 120)
 
-        cleaningResultSize = mm.clean(0)
+        cleaningResultSize = self.mm.clean(0)
         # All manifest are gone
         self.assertEqual(cleaningResultSize, 0)
-        self.assertEqual(self._getDirectorySize(manifestsRootDir), 0)
+        self.assertEqual(self._getDirectorySize(self.manifestsRootDir), 0)
 
 
 class TestCompilerArtifactsRepository(unittest.TestCase):
