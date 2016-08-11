@@ -22,6 +22,7 @@ from clcache import (
     Manifest,
     ManifestRepository,
     Statistics,
+    getFileHash
 )
 from clcache import (
     AnalysisError,
@@ -281,6 +282,15 @@ class TestManifestRepository(unittest.TestCase):
         self.assertEqual(cleaningResultSize, 0)
         self.assertEqual(self._getDirectorySize(self.manifestsRootDir), 0)
 
+    def testNonExistingInclude(self):
+        try:
+            self.mm.getIncludesContentHashForFiles(["include/removedInclude.h"])
+        except Exception as e:
+            self.fail('Failed to handle non-existing includes: {0} {1} '.format(type(e).__name__,e))
+
+class TestGlobalFunctions(unittest.TestCase):
+    def testgetFileHash(self):
+        self.assertEqual(getFileHash("nonexisting.h"), None)
 
 class TestCompilerArtifactsRepository(unittest.TestCase):
     def testPaths(self):

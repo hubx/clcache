@@ -186,6 +186,8 @@ class ManifestRepository(object):
     @staticmethod
     def getIncludesContentHashForFiles(listOfIncludesAbsolute):
         listOfIncludesHashes = [getFileHash(filepath) for filepath in listOfIncludesAbsolute]
+        if None in listOfIncludesHashes:
+            return None
         return ManifestRepository.getIncludesContentHashForHashes(listOfIncludesHashes)
 
     @staticmethod
@@ -425,6 +427,8 @@ class Cache(object):
 
     @staticmethod
     def getDirectCacheKey(manifestHash, includesContentHash):
+        if includesContentHash is None:
+            return None
         # We must take into account manifestHash to avoid
         # collisions when different source files use the same
         # set of includes.
@@ -685,8 +689,11 @@ def getCompilerHash(compilerBinary):
 
 def getFileHash(filePath, additionalData=None):
     hasher = HashAlgorithm()
-    with open(filePath, 'rb') as inFile:
-        hasher.update(inFile.read())
+    try:
+        with open(filePath, 'rb') as inFile:
+            hasher.update(inFile.read())
+    except FileNotFoundError:
+        return None
     if additionalData is not None:
         # Encoding of this additional data does not really matter
         # as long as we keep it fixed, otherwise hashes change.
@@ -1474,7 +1481,10 @@ def processDirect(cache, objectFile, compiler, cmdLine, sourceFile):
             # NOTE: command line options already included in hash for manifest name
             includesContentHash = ManifestRepository.getIncludesContentHashForFiles(
                 [expandBasedirPlaceholder(include, baseDir) for include in manifest.includeFiles])
-            cachekey = manifest.includesContentToObjectMap.get(includesContentHash)
+            if includesContentHash is None:
+                cachekey = None
+            else:
+                cachekey = manifest.includesContentToObjectMap.get(includesContentHash)
             if cachekey is not None:
                 if cache.compilerArtifactsRepository.section(cachekey).hasEntry(cachekey):
                     return processCacheHit(cache, objectFile, cachekey)
